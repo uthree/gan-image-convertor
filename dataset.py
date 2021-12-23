@@ -17,6 +17,9 @@ class ImageDataset(torch.utils.data.Dataset):
         for dir_path in dir_pathes:
             self.pathes += glob.glob(dir_path)
         self.len = len(self.pathes)
+    
+    def set_size(self, size):
+        self.size = size
         
     def __getitem__(self, index):
         path = self.pathes[index]
@@ -24,6 +27,7 @@ class ImageDataset(torch.utils.data.Dataset):
         img = img.resize((self.size, self.size))
         img = img.convert('RGB')
         img = torch.from_numpy(np.array(img)).float()
+        img = img.resize(self.size, self.size)
         return img
 
     def __len__(self):
