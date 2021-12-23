@@ -170,5 +170,14 @@ class Generator(nn.Module):
             )
 
 
+class Discriminator(nn.Module):
+    """Some Information about Discriminator"""
+    def __init__(self):
+        super(Discriminator, self).__init__()
+
+    def forward(self, x):
+
+        return x
+
 g = Generator()
 print(g)
