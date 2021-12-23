@@ -101,7 +101,6 @@ class Generator(nn.Module):
             a = self.layers[-1].torgb(outs[-1]) * self.alpha 
             b = self.layers[-2].torgb(outs[-2]) * (1 - self.alpha)
             b = F.upsample(b, scale_factor=2, mode='bilinear', align_corners=True)
-            print(a.shape, b.shape)
             return a + b
             
     def add_layer(self, channels):
@@ -119,25 +118,44 @@ class FromRGB(nn.Module):
 class DiscriminatorBlock(nn.Module):
     """Some Information about DiscriminatorBlock"""
     def __init__(self, in_channels, out_channels):
-        self.fromRGB = FromRGB(in_channels)
         super(DiscriminatorBlock, self).__init__()
+        self.in_channels = in_channels
+        self.fromRGB = FromRGB(in_channels)
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.lrelu1 = nn.LeakyReLU()
+        self.norm = nn.InstanceNorm2d(in_channels)
         self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
         self.lrelu2 = nn.LeakyReLU()
         self.channel_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
         self.down_sample = nn.AvgPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
+        
         x = self.lrelu1(self.conv1(x)) + x
+        x = self.norm(x)
         x = self.lrelu2(self.conv2(x)) + x
         x = self.channel_conv(x)
         x = self.down_sample(x)
         return x
+    
+class Discriminator(nn.Module):
+    """Some Information about Discriminator"""
+    def __init__(self, initial_channels=512):
+        super(Discriminator, self).__init__()
+        self.layers = nn.ModuleList([])
+        self.last_channels = initial_channels
+        self.affine = nn.Linear(initial_channels * 4 * 4, 1)
+        self.sigmoid = nn.Sigmoid()
         
-g = Generator(style_dim=512)
-g.add_layer(256)
-g.add_layer(128)
-style = torch.randn(1, 512)
-out = g(style)
-print(out.shape)
+    def forward(self, x):
+        x = self.layers[0].fromRGB(x)
+        for i in range(len(self.layers)):
+            x = self.layers[i](x)
+        x = x.view(x.size(0), -1)
+        x = self.affine(x)
+        x = self.sigmoid(x)
+        return x
+    
+    def add_layer(self, channels):
+        self.layers.insert(0, DiscriminatorBlock(channels, self.last_channels))
+        self.last_channels  = channels
