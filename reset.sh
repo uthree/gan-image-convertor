@@ -1,0 +1,2 @@
+rm *.pt
+rm ./results/*

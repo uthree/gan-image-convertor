@@ -7,11 +7,14 @@ class MappingNetwork(nn.Module):
     """Some Information about MappingNetwork"""
     def __init__(self, dim, num_layers=8, activation=nn.LeakyReLU):
         super(MappingNetwork, self).__init__()
-        self.seq = nn.Sequential([
-            nn.Sequential(
-                nn.Linear(dim, dim),
-                activation()
-            ) for _ in range(num_layers) ]
+        self.seq = nn.Sequential(
+            *[
+                nn.Sequential(
+                    nn.Linear(dim, dim),
+                    nn.LayerNorm(dim),
+                    activation()
+                ) for _ in range(num_layers)
+            ]
         )
     def forward(self, x):
         return self.seq(x)
@@ -39,7 +42,10 @@ class NoiseLayer(nn.Module):
         self.gain = gain
         
     def forward(self, x):
-        return x + torch.randn(self.shape) * self.gain
+        noise = torch.randn(self.shape)
+        device = x.device
+        noise = noise.to(device)
+        return x + noise * self.gain
 
 class ToRGB(nn.Module):
     """Some Information about ToRGB"""
