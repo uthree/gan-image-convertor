@@ -15,15 +15,16 @@ import time
 
 initial_channels = 512
 channels_growning =   [ 256, 128, 64, 32, 16, 16, 8, 8 ]
-batch_size_growning = [  16,  16,  8,  4,  2,  2, 2, 2 ] 
+batch_size_growning = [  32,  16,  8,  4,  2,  2, 2, 2 ] 
 style_dim = 512
 num_epoch_per_resolution = 1
 num_workers=15
-dataset_max_size = 100000
+dataset_max_size = 10000
 
 pathes = [
-    "/mnt/d/local-develop/lineart2image_data_generator/colorized_1024x/"
-    #"/mnt/d/local-develop/AnimeIconGenerator128x_v3/small_dataset128x/"
+    "/mnt/d/local-develop/lineart2image_data_generator/colorized_1024x/",
+    "/mnt/d/local-develop/lineart2image_data_generator/colorized/",
+    #"/mnt/d/local-develop/AnimeIconGenerator128x_v3/small_dataset128x/",
 ]
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
