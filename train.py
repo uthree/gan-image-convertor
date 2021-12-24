@@ -11,16 +11,18 @@ from model import MappingNetwork, Generator, Discriminator
 from tqdm import tqdm
 from PIL import Image
 import numpy as np
+import time
 
 initial_channels = 512
-channels_growning =   [ 256, 128, 64, 32, 16, 8]
-batch_size_growning = [  16,  16,  8,  4,  2, 1] 
-style_dim = 512 
+channels_growning =   [ 256, 128, 64, 32, 16, 16, 8, 8 ]
+batch_size_growning = [  16,  16,  8,  4,  2,  2, 2, 2 ] 
+style_dim = 512
 num_epoch_per_resolution = 1
 num_workers=15
+dataset_max_size = 100000
 
 pathes = [
-    "/mnt/d/local-develop/lineart2image_data_generator/colorized/"
+    "/mnt/d/local-develop/lineart2image_data_generator/colorized_1024x/"
     #"/mnt/d/local-develop/AnimeIconGenerator128x_v3/small_dataset128x/"
 ]
 
@@ -50,7 +52,7 @@ def main():
         d = Discriminator(initial_channels=initial_channels)
         print("Initialized discriminator network.")
 
-    dataset = ImageDataset(pathes, size=4)
+    dataset = ImageDataset(pathes, size=4, max_size=dataset_max_size)
 
     for res_id in range(len(g.layers)-1, len(channels_growning)-1):
         g.add_layer(channels_growning[res_id])
@@ -74,6 +76,7 @@ def main():
         len_ds = len(dataset)
         for epoch in range(num_epoch_per_resolution):
             for i, (image) in enumerate(dataloader):
+                g.alpha=((epoch - num_epoch_per_resolution) / num_epoch_per_resolution) + 1 + (1/num_epoch_per_resolution/len_ds*batch_size) * i
                 image = image.to(device)
                 g.zero_grad()
                 m.zero_grad()
@@ -93,13 +96,15 @@ def main():
                 d.zero_grad()
                 fake = gout.detach()
                 real = image
+                if(real.shape != fake.shape):
+                    continue
                 d_loss = criterion(d(real), torch.ones(batch_size, 1).to(device)) + criterion(d(fake), torch.zeros(batch_size, 1).to(device))
                 d_loss.backward()
                 optimizer_d.step()
                 
                 bar.set_description(f"Epoch {epoch} Batch {i}, d_loss:{round(d_loss.item(), 5)} g_loss:{round(g_loss.item(), 5)} alpha: {round(g.alpha, 5)}")
                 bar.update(batch_size)
-                if i % 100 == 0:
+                if i % 1000 == 0:
                     save_model(d, g, m)
                     # output fake image to ./results
                     img = gout.detach().cpu().numpy()[0]
@@ -107,7 +112,7 @@ def main():
                     img = img * 255
                     img = img.astype(np.uint8)
                     Image.fromarray(img).save(f"./results/{i}.png")
-                g.alpha=((epoch - num_epoch_per_resolution) / num_epoch_per_resolution) + 1 + (1/num_epoch_per_resolution/len_ds*batch_size) * i
+
         bar.close()
         print("Finished train resolution: {}x{}".format(resolution, resolution))
         save_model(d, g, m)

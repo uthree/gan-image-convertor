@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 class ImageDataset(torch.utils.data.Dataset):
     """Some Information about ImageDataset"""
-    def __init__(self, dir_pathes, size=4):
+    def __init__(self, dir_pathes, size=4, max_size=10000000):
         super(ImageDataset, self).__init__()
         self.dir_pathes = dir_pathes
         self.pathes = []
@@ -22,6 +22,7 @@ class ImageDataset(torch.utils.data.Dataset):
             p = [os.path.join(dir_path, i) for i in p]
             self.pathes += p
             tqdm.write(f"loaded {len(p)} images.")
+        self.pathes = self.pathes[:max_size]
         self.len = len(self.pathes)
     
     def set_size(self, size):

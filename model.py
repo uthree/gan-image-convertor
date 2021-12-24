@@ -128,9 +128,10 @@ class DiscriminatorBlock(nn.Module):
         self.in_channels = in_channels
         self.fromRGB = FromRGB(in_channels)
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+        self.dropout1 = nn.Dropout2d(0.2)
         self.lrelu1 = nn.LeakyReLU()
-        self.norm = nn.InstanceNorm2d(in_channels)
         self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1)
+        self.dropout2 = nn.Dropout2d(0.2)
         self.lrelu2 = nn.LeakyReLU()
         self.channel_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
         self.down_sample = nn.AvgPool2d(kernel_size=2, stride=2)
@@ -138,8 +139,9 @@ class DiscriminatorBlock(nn.Module):
     def forward(self, x):
         
         x = self.lrelu1(self.conv1(x)) + x
-        x = self.norm(x)
+        x = self.dropout1(x)
         x = self.lrelu2(self.conv2(x)) + x
+        x = self.dropout2(x)
         x = self.channel_conv(x)
         x = self.down_sample(x)
         return x
